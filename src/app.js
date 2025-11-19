@@ -1,0 +1,50 @@
+import express from 'express';
+import morgan from 'morgan';
+import cookieParser from 'cookie-parser';
+import cors from 'cors';
+
+
+import  authRoutes  from "./routes/auth.routes.js";
+import songRoutes from './routes/song.routes.js';
+//importar las rutas de usuario
+/*
+import articleRouter from './routes/articles.routes.js';*/
+
+const app = express();
+
+
+
+app.use(cors({
+    origin: 'http://localhost:5173',
+    credentials: true 
+}));
+app.use(morgan('dev'));
+app.use(express.json());
+app.use(express.urlencoded( { extended: false} ) );
+app.use(cookieParser());
+
+app.use('/api/auth', authRoutes);
+app.use('/api/songs', songRoutes);
+
+
+app.get('/', (req, res) => {
+    // ¡Enviamos UNA SOLA respuesta con toda la información!
+    res.status(200).json({
+        message: 'API de Disco Elysium: Conectada (Usando ES Modules)',
+        version: '1.0.0',
+        rutasDisponibles: [
+            { endpoint: "/api/auth/register", method: "POST", description: "Crear un nuevo usuario" },
+            { endpoint: "/api/auth/login", method: "POST", description: "Iniciar sesion" },
+            { endpoint: "/api/auth/logout", method: "POST", description: "Cerrar sesion" }
+        ]
+    });
+});
+
+app.use((error, req, res, next) => {
+    console.error('Error no manejado:', error);
+    res.status(500).json({ 
+        message: ['Error interno del servidor'],
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
+});
+export default app;

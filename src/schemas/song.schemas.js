@@ -23,16 +23,17 @@ export const createSongSchema = z.object({
 });
 
 export const searchSongSchema = z.object({
-    // La búsqueda puede ser por uno o más de estos campos, todos opcionales.
-    NomMus: z.string().optional(),
-    Album: z.string().optional(),
-    Art: z.string().optional(),
-    genero: z.string().optional(),
-    
-    // El año debe ser un string que se puede convertir a número
-    AnPu: z.string().regex(/^\d{4}$/, "El año debe ser un valor de 4 dígitos").optional(),
-    
-    // Agregamos un campo de término genérico, si se desea buscar por cualquier cosa
-    term: z.string().optional(),
+    q: z.string().min(1, "El parámetro q no puede estar vacío")
+}).strict();
 
-}).strict().partial(); // Usamos .partial() para que todos los campos sean opcionales
+
+export const updateSongSchema = z.object({
+    NomMus: z.string().min(1).optional(),
+    Album: z.string().min(1).optional(),
+    Art: z.string().min(1).optional(),
+    genero: z.string().min(1).optional(),
+    AnPu: z
+        .string()
+        .regex(/^\d{4}$/)
+        .optional(),
+});

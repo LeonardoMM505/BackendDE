@@ -180,35 +180,28 @@ export const deleteSong = async (req, res) => {
 
 // --- 6. BÚSQUEDA AVANZADA (CLIENTE/ADMIN) ---
 export const searchSongs = async (req, res) => {
-    // req.query contiene los parámetros (NomMus, Album, Art, etc.)
-    const query = req.query; 
-
     try {
-        // La validación de esquema ya garantizó que los campos tienen el formato correcto
-        
+        const q = req.query.q;
+
+        if (!q || q.trim() === "") {
+            return res.status(400).json({ message: "Debes proporcionar un parámetro de búsqueda (q)." });
+        }
+
         let songs = [];
 
-        // Lógica simple para buscar por artista si solo viene el artista
-        if (query.Art) {
-            songs = await Song.findByArt(query.Art);
-        } 
-        // Lógica simple para buscar por nombre de canción si solo viene el nombre
-        else if (query.NomMus) {
-             songs = await Song.findByName(query.NomMus);
-        }
-        // Puedes agregar más lógica aquí (ej. combinar criterios)
-        else {
-            // Si no se especifica un criterio de búsqueda, devolvemos el catálogo completo
-            songs = await Song.findAll();
-        }
+        // Si q es un número, buscar también por año
+        const isNumber = !isNaN(q);
+
+        songs = await Song.universalSearch(q, isNumber);
 
         if (songs.length === 0) {
-             return res.status(404).json({ message: ["No se encontraron canciones que coincidan con los criterios de búsqueda."] });
+            return res.status(404).json({ message: "No se encontraron canciones que coincidan." });
         }
 
         return res.status(200).json(songs);
+
     } catch (error) {
-        console.error("Error al buscar canciones:", error);
-        return res.status(500).json({ message: ["Error interno del servidor al buscar canciones."] });
+        console.error("Error en búsqueda universal:", error);
+        return res.status(500).json({ error: "Error interno al realizar la búsqueda" });
     }
 };

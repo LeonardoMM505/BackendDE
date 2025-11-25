@@ -1,3 +1,5 @@
+import { z } from 'zod';
+
 /**
  * Middleware que valida el body (req.body) 
  * @param {object} schema - El esquema de Zod contra el cual validar.
@@ -18,6 +20,20 @@ export const validateSchema = (schema) => async (req, res, next) => {
         return res.status(400).json({ 
             message: "Error de validación",
             errors: errorMessages 
+        });
+    }
+};
+
+
+export const validateQuery = (schema) => async (req, res, next) => {
+    try {
+        // Cambiamos req.body por req.query
+        await schema.parseAsync(req.query);
+        next();
+    } catch (error) {
+        return res.status(400).json({
+            message: "Error de validación en la búsqueda",
+            errors: error.errors.map((err) => err.message),
         });
     }
 };

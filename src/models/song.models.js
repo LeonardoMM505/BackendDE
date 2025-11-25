@@ -35,25 +35,31 @@ class Song {
      * @returns {Promise<number>} - Número de filas afectadas (1 o 0)
      */
     static async update(id, updatedSong) {
-        try {
-            const sql = 'UPDATE musica SET NomMus = ?, Album = ?, UrlPort = ?, AnPu = ?, Art = ?, genero = ? WHERE IdMus = ?';
-            
-            const [result] = await pool.execute(sql, [
-                updatedSong.NomMus,
-                updatedSong.Album,
-                updatedSong.UrlPort,
-                updatedSong.AnPu,
-                updatedSong.Art,
-                updatedSong.genero,
-                id // El ID de la canción
-            ]);
-            
-            return result.affectedRows;
-        } catch (error) {
-            console.error("Error al actualizar la canción:", error);
-            throw error;
+    try {
+        const fields = [];
+        const values = [];
+
+        // Agregar solo los campos que vienen definidos
+        for (const key in updatedSong) {
+            if (updatedSong[key] !== undefined) {
+                fields.push(`${key} = ?`);
+                values.push(updatedSong[key]);
+            }
         }
+
+        if (fields.length === 0) return 0; // Nada que actualizar
+
+        const sql = `UPDATE musica SET ${fields.join(', ')} WHERE IdMus = ?`;
+        values.push(id);
+
+        const [result] = await pool.execute(sql, values);
+        return result.affectedRows;
+
+    } catch (error) {
+        console.error("Error al actualizar la canción:", error);
+        throw error;
     }
+}
 
     /**
      * @description Elimina una canción por su ID (Admin)
@@ -98,11 +104,11 @@ class Song {
      */
      static async findByName(NomMus) { 
         try {
-            const sql = 'SELECT * FROM musica WHERE NomMus = ?';
+            const sql = 'SELECT * FROM musica WHERE NomMus LIKE ?';
 
-            const [rows] = await pool.execute(sql, [NomMus]);
+            const [rows] = await pool.execute(sql, [`%${NomMus}%`]);
 
-            return rows[0];
+            return rows;
         } catch (error) {
             console.error("Error al buscar por nombre de canción:", error);
             throw error;
@@ -116,11 +122,11 @@ class Song {
      */
      static async findByAlbum(Album) { 
         try {
-            const sql = 'SELECT * FROM musica WHERE Album = ?';
+            const sql = 'SELECT * FROM musica WHERE Album LIKE ?';
 
-            const [rows] = await pool.execute(sql, [Album]);
+            const [rows] = await pool.execute(sql, [`%${Album}%`]);
 
-            return rows[0];
+            return rows;
         } catch (error) {
             console.error("Error al buscar por nombre de canción:", error);
             throw error;
@@ -138,7 +144,7 @@ class Song {
 
             const [rows] = await pool.execute(sql, [AnPu]);
 
-            return rows[0];
+            return rows;
         } catch (error) {
             console.error("Error al buscar por nombre de canción:", error);
             throw error;
@@ -152,11 +158,11 @@ class Song {
      */
      static async findByArt(Art) { 
         try {
-            const sql = 'SELECT * FROM musica WHERE Art = ?';
+            const sql = 'SELECT * FROM musica WHERE Art LIKE ?';
 
-            const [rows] = await pool.execute(sql, [Art]);
+            const [rows] = await pool.execute(sql, [`%${Art}%`]);
 
-            return rows[0];
+            return rows;
         } catch (error) {
             console.error("Error al buscar por nombre de canción:", error);
             throw error;
@@ -170,11 +176,11 @@ class Song {
      */
      static async findByGenero(genero) { 
         try {
-            const sql = 'SELECT * FROM musica WHERE genero = ?';
+            const sql = 'SELECT * FROM musica WHERE genero LIKE ?';
 
-            const [rows] = await pool.execute(sql, [genero]);
+            const [rows] = await pool.execute(sql, [`%${genero}%`]);
 
-            return rows[0];
+            return rows;
         } catch (error) {
             console.error("Error al buscar por nombre de canción:", error);
             throw error;
@@ -191,14 +197,46 @@ static async findById(id) {
     try {
         const sql = 'SELECT * FROM musica WHERE IdMus = ?';
         const [rows] = await pool.execute(sql, [id]);
-        return rows[0];
+        return rows;
     } catch (error) {
         console.error("Error al buscar canción por ID:", error);
         throw error;
     }
 }
 
-     
+static async universalSearch(query, includeYear = false) {
+    try {
+
+        let sql = `
+            SELECT * FROM musica 
+            WHERE NomMus LIKE ? 
+               OR Album LIKE ?
+               OR Art LIKE ?
+               OR genero LIKE ?
+        `;
+
+        const params = [
+            `%${query}%`,
+            `%${query}%`,
+            `%${query}%`,
+            `%${query}%`
+        ];
+
+        // Si el usuario buscó un número → buscar por año
+        if (includeYear) {
+            sql += " OR AnPu = ? ";
+            params.push(Number(query));
+        }
+
+        const [rows] = await pool.execute(sql, params);
+        return rows;
+
+    } catch (error) {
+        console.error("Error en universalSearch:", error);
+        throw error;
+    }
+}     
+
 }
 
 

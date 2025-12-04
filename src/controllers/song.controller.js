@@ -1,7 +1,7 @@
 import Song from '../models/Song.models.js';
 import cloudinary from '../config/cloudinary.config.js';
 
-// --- 1. CREAR CANCIÓN (ADMIN) ---
+// 1. CREAR CANCIÓN (ADMIN) 
 export const createSong = async (req, res) => {
     try {
         const { NomMus, Album, AnPu, Art, genero } = req.body; 
@@ -136,45 +136,53 @@ export const deleteSong = async (req, res) => {
     const songId = req.params.id;
 
     try {
-        // 1. Buscar la canción en la BD para obtener la URL de la imagen
+        // 1. Buscar la canción
         const songToDelete = await Song.findById(songId);
         if (!songToDelete) {
-            return res.status(404).json({ message: ["Canción no encontrada para eliminar."] });
+            return res.status(404).json({ message: ["Canción no encontrada."] });
         }
 
-        // 2. Si tiene una URL de Cloudinary, extraer el public_id y borrarla
+        // 2. Eliminar de Cloudinary con TIMEOUT
         if (songToDelete.UrlPort && songToDelete.UrlPort.includes('cloudinary.com')) {
             try {
-                // Extraer el public_id de la URL.
-                // Ejemplo: .../upload/v12345/disco-elysium/portadas/mi_archivo.jpg
-                // Public ID: disco-elysium/portadas/mi_archivo
                 const urlParts = songToDelete.UrlPort.split('/');
                 const publicIdWithExtension = urlParts.slice(urlParts.indexOf('disco-elysium')).join('/');
                 const publicId = publicIdWithExtension.substring(0, publicIdWithExtension.lastIndexOf('.'));
-
+                
                 if (publicId) {
-                    // Borramos la imagen de Cloudinary
-                    await cloudinary.uploader.destroy(publicId, { resource_type: 'image' });
+                    // Timeout de 5 segundos para Cloudinary
+                    const cloudinaryPromise = cloudinary.uploader.destroy(publicId, { 
+                        resource_type: 'image' 
+                    });
+                    
+                    // Race entre Cloudinary y timeout
+                    const timeoutPromise = new Promise((_, reject) => {
+                        setTimeout(() => reject(new Error('Cloudinary timeout')), 5000);
+                    });
+                    
+                    await Promise.race([cloudinaryPromise, timeoutPromise]);
+                    
                 }
             } catch (imgError) {
-                console.error("Error al eliminar la imagen de Cloudinary:", imgError);
-                // No detenemos el proceso, solo lo advertimos y continuamos borrando de la BD.
+                console.error("Error (no crítico) al eliminar de Cloudinary:", imgError.message);
+                // CONTINUAMOS aunque falle Cloudinary
             }
         }
 
-        // 3. Borrar la canción de la Base de Datos
+        // 3. Eliminar de la BD (esto siempre debe ejecutarse)
         const affectedRows = await Song.delete(songId);
-
+        
         if (affectedRows === 0) {
-            // Esto no debería pasar si la encontramos antes, pero es una buena práctica
             return res.status(404).json({ message: ["Canción no encontrada en la BD."] });
         }
         
-        return res.sendStatus(204); // 204 = No Content (Éxito)
+        return res.sendStatus(204);
 
     } catch (error) {
         console.error("Error al eliminar canción:", error);
-        return res.status(500).json({ message: ["Error interno del servidor al eliminar canción."] });
+        return res.status(500).json({ 
+            message: ["Error interno del servidor al eliminar canción."]
+        });
     }
 };
 

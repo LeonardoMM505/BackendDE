@@ -1,22 +1,32 @@
-/**
- * Middleware para restringir el acceso basado en el rol del usuario.
- * @param {string[]} allowedRoles - Array de roles permitidos (ej. ['admin']).
- */
-export const authorize = (allowedRoles) => (req, res, next) => {
-    // 1. Verificar si el usuario ha sido adjuntado por authRequired
-    if (!req.user || !req.user.Rol) {
-        // Este error solo debería ocurrir si el middleware authRequired falla.
-        return res.status(403).json({ message: ["Acceso denegado: El rol no está disponible."] });
+// authorize.middleware.js
+export const authorize = (allowedRoles = []) => {
+  return (req, res, next) => {
+    console.log('🔍 authorize middleware ejecutándose');
+    console.log('🔍 Ruta:', req.path);
+    console.log('🔍 req.user:', req.user);
+    console.log('🔍 req.user.Rol:', req.user?.Rol);
+    console.log('🔍 req.user.role:', req.user?.role);
+    console.log('🔍 Roles permitidos:', allowedRoles);
+    
+    // Verificar que el usuario existe
+    if (!req.user) {
+      console.error('❌ authorize - No hay usuario en la request');
+      return res.status(401).json({ message: "Usuario no autenticado" });
     }
-
-    const userRole = req.user.Rol;
-
-    // 2. Verificar si el rol del usuario está en la lista de roles permitidos
-    if (!allowedRoles.includes(userRole)) {
-        // Si el usuario es 'cliente' y la ruta requiere 'admin'
-        return res.status(403).json({ message: ["Acceso denegado: Rol insuficiente."] });
+    
+    // Obtener el rol del usuario (manejar diferentes propiedades)
+    const userRole = req.user.Rol || req.user.role;
+    console.log('🔍 authorize - Rol del usuario:', userRole);
+    
+    // Verificar si el rol está permitido
+    if (!userRole || !allowedRoles.includes(userRole)) {
+      console.error('❌ authorize - Rol no permitido:', userRole);
+      return res.status(403).json({ 
+        message: `Acceso denegado. Se requiere uno de estos roles: ${allowedRoles.join(', ')}` 
+      });
     }
-
-    // 3. Si el rol es permitido, continuar
+    
+    console.log('✅ authorize - Acceso permitido para rol:', userRole);
     next();
+  };
 };

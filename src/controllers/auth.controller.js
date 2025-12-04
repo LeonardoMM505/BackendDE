@@ -51,50 +51,49 @@ export const register = async (req, res) => {
 
 //LOGIN
 export const login = async (req, res) => {
-    const { Email, Pass } = req.body;
-
     try {
-        // 1. Buscar al usuario por email
+        const { Email, Pass } = req.body;
+      
+        
         const userFound = await User.findByEmail(Email);
-
+        
         if (!userFound) {
-            return res.status(400)
-                .json({ message: ['Usuario o contraseña incorrectos'] });
+            return res.status(400).json({ message: "Usuario no encontrado" });
         }
-
-        // 2. Comparar la contraseña
+        
+   
+        // Verificar contraseña
         const isMatch = await bcrypt.compare(Pass, userFound.Pass);
-
         if (!isMatch) {
-            return res.status(400)
-                .json({ message: ['Usuario o contraseña incorrectos'] });
+            return res.status(400).json({ message: "Contraseña incorrecta" });
         }
-
-        // 3. Crear el token
-        const token = await createAccessToken({ 
-            id: userFound.IdUs, 
-            role: userFound.Rol 
+        
+        // Crear token
+        const token = await createAccessToken({
+            IdUs: userFound.IdUs,
+            Rol: userFound.Rol
         });
-
-        // 4. Guardar el token en la cookie
-        res.cookie('token', token, {
-            sameSite: 'lax',
-        });
-
-        // 5. Enviar respuesta
-        res.json({
+        
+        // Preparar respuesta
+        const userResponse = {
             id: userFound.IdUs,
-            nombre: userFound.NomUs,
+            username: userFound.NomUs, // ← Esto es importante
             email: userFound.Email,
-            rol: userFound.Rol,
+            role: userFound.Rol, // ← Esto es importante
+            Rol: userFound.Rol
+        };
+        
+        
+        res.json({
+            token,
+            user: userResponse // ← Asegúrate de que sea 'user'
         });
-
+        
     } catch (error) {
-        console.error("Error en el controlador de login:", error);
-        res.status(500).json({ message: ['Error interno del servidor'] });
+        console.error('❌ Error en login:', error);
+        res.status(500).json({ message: error.message });
     }
 };
-
 
 //LOGOUT
 export const logout = (req, res) => {
@@ -120,22 +119,37 @@ export const profile = async (req, res) => {
 
 // --- 4. VERIFY TOKEN (VERIFICA SI EL TOKEN ES VÁLIDO AL CARGAR LA APP) ---
 export const verifyToken = async (req, res) => {
-    // Si el middleware authRequired no encontró al usuario, ya envió un 401/403.
-    // Si llega hasta aquí, significa que req.user existe y es válido.
-
-    if (!req.user) {
-        // En teoría, authRequired ya lo habría enviado, pero es una buena verificación final.
-        return res.status(401).json({ message: ['No autorizado'] });
+    try {
+        
+        const userFound = await User.findById(req.user.IdUs); // o como obtengas el usuario
+        
+        if (!userFound) {
+            return res.status(404).json({ message: "Usuario no encontrado" });
+        }
+        
+        console.log('🔍 Usuario encontrado en BD:', userFound);
+        
+        // Asegúrate de devolver el rol como 'role' (minúscula)
+        const userResponse = {
+            id: userFound.IdUs,
+            username: userFound.NomUs,
+            email: userFound.Email,
+            role: userFound.Rol, // ← Esto es lo importante
+            // También incluye Rol por compatibilidad
+            Rol: userFound.Rol
+        };
+        
+        console.log('✅ Token creado con payload:', {
+    id: userFound.IdUs,
+    IdUs: userFound.IdUs,
+    role: userFound.Rol
+});
+        
+        res.json(userResponse);
+    } catch (error) {
+        console.error('❌ Error en verifyToken:', error);
+        res.status(500).json({ message: "Error del servidor" });
     }
-
-    // Devolvemos los datos del usuario adjuntos por el middleware
-    return res.json({
-        id: req.user.IdUs,
-        username: req.user.NomUs,
-        email: req.user.Email,
-        role: req.user.Rol
-    });
-
+};
 
     //deleteuserequest pendiente
-};

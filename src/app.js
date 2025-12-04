@@ -6,9 +6,7 @@ import cors from 'cors';
 
 import  authRoutes  from "./routes/auth.routes.js";
 import songRoutes from './routes/song.routes.js';
-//importar las rutas de usuario
-/*
-import articleRouter from './routes/articles.routes.js';*/
+import playlistRoutes from './routes/playlists.routes.js';
 
 const app = express();
 
@@ -19,12 +17,13 @@ app.use(cors({
     credentials: true 
 }));
 app.use(morgan('dev'));
-app.use(express.json());
-app.use(express.urlencoded( { extended: false} ) );
+app.use(express.json()); // ← Para JSON
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/songs', songRoutes);
+app.use('/api/playlists', playlistRoutes);
 
 
 app.get('/', (req, res) => {

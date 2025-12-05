@@ -152,4 +152,14 @@ export const verifyToken = async (req, res) => {
     }
 };
 
+// --- 5. GET USERS (PENDIENTE) ---
+export const getUsers = async (req, res) => {
+    try {
+        const users = await User.findAll();
+        res.json(users);
+    } catch (error) {
+        console.error('❌ Error al obtener usuarios:', error);
+        res.status(500).json({ message: "Error del servidor" });
+    }
+};
     //deleteuserequest pendiente

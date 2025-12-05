@@ -11,11 +11,13 @@ export const createPlaylist = async (req, res) => {
         
         // OBTENER EL ID DEL USUARIO AUTENTICADO
         const IdUs = req.user.IdUs; 
+       
 
         const newPlaylistData = {
             NomPlay,
             genero,
-            IdUs 
+            IdUs,
+          
         };
 
         const newPlaylistId = await playlist.create(newPlaylistData);
@@ -293,6 +295,7 @@ export const getPlaylistById = async (req, res) => {
             NomPlay: playlistData.NomPlay,
             genero: playlistData.genero,
             IdUs: playlistData.IdUs
+       
         };
         
         res.json(normalizedPlaylist);

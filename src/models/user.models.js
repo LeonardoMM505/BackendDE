@@ -77,6 +77,21 @@ class User {
     }
 
     // Agregar delete update si es necesario (que probablemente lo sea)
+    /**
+     * @description Obtiene todos los usuarios
+     * @returns {Promise<Array>} - Array de usuarios
+     */
+    static async findAll() {
+        try {
+            const sql = 'SELECT IdUs, NomUs, Email, Rol FROM usuarios'; // Excluir Pass por seguridad
+            const [rows] = await pool.execute(sql);
+            return rows;
+        } catch (error) {
+            console.error("Error al obtener todos los usuarios:", error);
+            throw error;
+        }
 }
+}
+
 
 export default User;

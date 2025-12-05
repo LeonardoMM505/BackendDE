@@ -1,42 +1,51 @@
-
 import { createPool } from 'mysql2/promise';
+import dotenv from 'dotenv';
 
-// 1. Crear el Pool de Conexiones
-// Un "pool" gestiona múltiples conexiones para que sea más eficiente
-// y robusto para una aplicación web.
-const pool = createPool({
+// Cargar variables de entorno
+dotenv.config();
+
+// Configuración única (usa Aiven si DB_HOST está configurado, sino local)
+const dbConfig = {
     host: process.env.DB_HOST,
+    port: process.env.DB_PORT, // 3306 para local, 23940 para Aiven
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
     waitForConnections: true,
-    connectionLimit: 10, // Límite de conexiones
+    connectionLimit: 10,
     queueLimit: 0
-});
+};
 
-// 2. Función de Test de Conexión
-// Esta función la llamaremos desde index.js para asegurarnos de que todo funciona al arrancar.
+// Si hay host de Aiven, agregar SSL
+if (process.env.DB_HOST && process.env.DB_HOST.includes('aivencloud.com')) {
+    dbConfig.ssl = { 
+        rejectUnauthorized: false  // Cambia true por false
+    };
+}
+
+console.log(`🔌 Conectando a: ${dbConfig.host}:${dbConfig.port}`);
+
+// Crear el Pool
+const pool = createPool(dbConfig);
+
+// Función de conexión (sin cambios a tu función)
 export const connectDB = async () => {
     try {
-        // Obtenemos una conexión del pool solo para probar
         const connection = await pool.getConnection(); 
         
         console.log(`\n----------------------------------------------------`);
-        console.log(`  Base de Datos MySQL conectada exitosamente (Pool)`);
+        console.log(`  Base de Datos MySQL conectada exitosamente`);
+        console.log(`  Host: ${dbConfig.host}:${dbConfig.port}`);
+        console.log(`  Base: ${dbConfig.database}`);
         console.log(`----------------------------------------------------`);
         
-        // Devolvemos la conexión al pool
         connection.release();
     } catch (error) {
-        console.error("\n[ERROR] No se pudo conectar a la base de datos MySQL:");
+        console.error("\n[ERROR] No se pudo conectar a la base de datos:");
         console.error(error.message);
-        // Si la conexión falla, detenemos la aplicación
         process.exit(1); 
     }
 };
 
-// 3. Exportación Principal
-// Exportamos el 'pool' por defecto. Este 'pool' será el que 
-// usaremos en nuestros Modelos (User.model.js, Song.model.js) 
-// para hacer las consultas SQL.
+// Exportar pool (sin cambios)
 export default pool;

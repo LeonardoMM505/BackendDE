@@ -6,7 +6,8 @@ import {
     login, 
     logout,
     profile, 
-    verifyToken // <-- Aún no lo creamos
+    verifyToken,
+    getUsers // <-- Aún no lo creamos
 } from '../controllers/auth.controller.js';
 
 // 2. Importamos los middlewares
@@ -35,7 +36,8 @@ router.get('/profile', authRequired, profile);
 router.get('/verify', authRequired, verifyToken);
 
 // --- Rutas de Admin (PENDIENTES) ---
-// router.get('/users', authRequired, authorize(['admin']), getUsers); 
+router.get('/users',  getUsers);
+//router.get('/users', authRequired, authorize(['admin']), getUsers); 
 // router.delete('/users/:id', authRequired, authorize(['admin']), deleteUser);
 
 

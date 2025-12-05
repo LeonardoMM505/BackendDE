@@ -2,16 +2,17 @@ import dotenv from 'dotenv';
 import app from './app.js';
 import { connectDB } from './config/db.config.js'; 
 
-// 4. Ejecutar conexion
+
+
+// Ejecutar conexión
 connectDB();
 
-dotenv.config();
-// 5. Iniciar el servidor
+// Iniciar el servidor
 const PORT = process.env.PORT || 4000;
 
 app.listen(PORT, () => {
     console.log(`\n\n----------------------------------------------------`);
-    console.log(` Servidor de la API corriendo en http://localhost:${PORT}`);
-    console.log(` (Usando ES Modules)`);
+    console.log(` Servidor corriendo en http://localhost:${PORT}`);
+    console.log(` Base de datos: ${process.env.DB_HOST || 'localhost'}`);
     console.log(`----------------------------------------------------\n`);
 });

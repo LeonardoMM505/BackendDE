@@ -1,4 +1,4 @@
-import Song from '../models/Song.models.js';
+import Song from '../models/song.models.js';
 import cloudinary from '../config/cloudinary.config.js';
 
 // 1. CREAR CANCIÓN (ADMIN) 

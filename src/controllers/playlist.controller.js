@@ -1,5 +1,5 @@
 import playlist from '../models/playlist.models.js';
-import Song from '../models/Song.models.js';
+import Song from '../models/song.models.js';
 
 
 //playlist controller
